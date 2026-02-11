@@ -1,9 +1,13 @@
+
 import os
 import math
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_core.documents import Document
 import datetime
+
+
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +25,17 @@ def cosine_similarity(vector_a, vector_b):
     norm_b = math.sqrt(sum(b * b for b in vector_b))
     
     return dot_product / (norm_a * norm_b)
+
+def search_sentences(vector_store, query, k=3):
+    """
+    Search for similar sentences in the vector store.
+    Returns top k results with similarity scores.
+    """
+    results = vector_store.similarity_search_with_score(query, k=k)
+    print(f"\n🔍 Search Results for \"{query}\":\n")
+    for idx, (doc, score) in enumerate(results, 1):
+        print(f"{idx}. [Score: {score:.4f}] {doc.page_content}")
+    return results
 
 def main():
     print("🤖 Python LangChain Agent Starting...\n")
@@ -43,32 +58,64 @@ def main():
         check_embedding_ctx_length=False
     )
 
-    print("=== Embedding Inspector Lab ===")
-    print("Generating embeddings for three sentences...")
-
+    print("=== Vector Store Lab ===\n")
 
     sentences = [
+        # Animals and pets
         "The canine barked loudly.",
-"The dog made a noise.",
-"The electron spins rapidly."
+        "The dog made a noise.",
+        "Puppies need lots of attention and exercise.",
+        "Cats enjoy sleeping in sunny spots.",
+        "Birds sing beautifully in the morning.",
+        "Fish swim gracefully in the aquarium.",
+        # Science and physics
+        "Quantum mechanics explains particle behavior.",
+        "Atoms are made of protons, neutrons, and electrons.",
+        "The electron spins rapidly.",
+        # Food and cooking
+        "Chocolate cake is delicious.",
+        "I love making pasta for dinner.",
+        "Fresh fruit is healthy and tasty.",
+        # Sports and activities
+        "Soccer is a popular sport worldwide.",
+        "Swimming is great exercise for the body.",
+        # Weather and nature
+        "The ocean is very deep.",
+        "Rain falls gently on the rooftop.",
+        # Technology and programming
+        "I love programming in Python.",
+        "Artificial intelligence is changing the world."
     ]
 
-    embedding_vectors = []
+    print(f"Storing {len(sentences)} sentences in the vector database...")
 
-    for idx, sentence in enumerate(sentences, 1):
-        embedding = embeddings.embed_query(sentence)
-        embedding_vectors.append(embedding)
-        print(f"Sentence {idx}: {sentence}")
+    # Prepare metadata for each sentence
+    now = datetime.datetime.now().isoformat()
+    metadatas = [
+        {"created_at": now, "index": idx}
+        for idx in range(len(sentences))
+    ]
 
-    # Calculate and display cosine similarities
-    print("\nCosine Similarity Results:")
-    sim_1_2 = cosine_similarity(embedding_vectors[0], embedding_vectors[1])
-    sim_2_3 = cosine_similarity(embedding_vectors[1], embedding_vectors[2])
-    sim_3_1 = cosine_similarity(embedding_vectors[2], embedding_vectors[0])
+    # Create InMemoryVectorStore instance
+    vector_store = InMemoryVectorStore(embeddings)
 
-    print(f"Sentence 1 vs Sentence 2: {sim_1_2:.4f}")
-    print(f"Sentence 2 vs Sentence 3: {sim_2_3:.4f}")
-    print(f"Sentence 3 vs Sentence 1: {sim_3_1:.4f}")
+    # Add sentences to vector store with metadata
+    vector_store.add_texts(sentences, metadatas=metadatas)
+
+    print(f"✅ Successfully stored {len(sentences)} sentences\n")
+
+    # Interactive semantic search loop
+    print("=== Semantic Search ===\n")
+    while True:
+        user_query = input("Enter a search query (or 'quit' to exit): ")
+        if user_query.strip().lower() in {"quit", "exit"}:
+            print("\n👋 Goodbye!")
+            break
+        if not user_query.strip():
+            continue
+        search_sentences(vector_store, user_query)
+        print()
+    # ...existing code...
 
 if __name__ == "__main__":
     main()
