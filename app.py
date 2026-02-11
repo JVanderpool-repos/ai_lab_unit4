@@ -37,6 +37,37 @@ def search_sentences(vector_store, query, k=3):
         print(f"{idx}. [Score: {score:.4f}] {doc.page_content}")
     return results
 
+
+# Helper function to load a document and add to vector store
+def load_document(vector_store, file_path):
+    """
+    Loads a document from file_path, creates a LangChain Document, adds it to the vector store, and returns the document ID.
+    Handles errors and prints a success message.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        metadata = {
+            'fileName': os.path.basename(file_path),
+            'createdAt': datetime.datetime.now().isoformat()
+        }
+        document = Document(page_content=content, metadata=metadata)
+        doc_ids = vector_store.add_documents([document])
+        print(f"✅ Loaded '{metadata['fileName']}' ({len(content)} chars) into vector store.")
+        return doc_ids[0] if doc_ids else None
+    except FileNotFoundError:
+        print(f"❌ File not found: {file_path}")
+        return None
+    except Exception as e:
+        error_msg = str(e)
+        if "maximum context length" in error_msg or "token" in error_msg:
+            print(f"⚠️ This document is too large to embed as a single chunk.")
+            print("Token limit exceeded. The embedding model can only process up to 8,191 tokens at once.")
+            print("Solution: The document needs to be split into smaller chunks.")
+        else:
+            print(f"❌ Error loading document '{file_path}': {error_msg}")
+        return None
+
 def main():
     print("🤖 Python LangChain Agent Starting...\n")
 
@@ -60,61 +91,25 @@ def main():
 
     print("=== Vector Store Lab ===\n")
 
-    sentences = [
-        # Animals and pets
-        "The canine barked loudly.",
-        "The dog made a noise.",
-        "Puppies need lots of attention and exercise.",
-        "Cats enjoy sleeping in sunny spots.",
-        "Birds sing beautifully in the morning.",
-        "Fish swim gracefully in the aquarium.",
-        # Science and physics
-        "Quantum mechanics explains particle behavior.",
-        "Atoms are made of protons, neutrons, and electrons.",
-        "The electron spins rapidly.",
-        # Food and cooking
-        "Chocolate cake is delicious.",
-        "I love making pasta for dinner.",
-        "Fresh fruit is healthy and tasty.",
-        # Sports and activities
-        "Soccer is a popular sport worldwide.",
-        "Swimming is great exercise for the body.",
-        # Weather and nature
-        "The ocean is very deep.",
-        "Rain falls gently on the rooftop.",
-        # Technology and programming
-        "I love programming in Python.",
-        "Artificial intelligence is changing the world."
-    ]
-
-    print(f"Storing {len(sentences)} sentences in the vector database...")
-
-    # Prepare metadata for each sentence
-    now = datetime.datetime.now().isoformat()
-    metadatas = [
-        {"created_at": now, "index": idx}
-        for idx in range(len(sentences))
-    ]
-
     # Create InMemoryVectorStore instance
     vector_store = InMemoryVectorStore(embeddings)
 
-    # Add sentences to vector store with metadata
-    vector_store.add_texts(sentences, metadatas=metadatas)
+    # Load documents into the vector database
+    print("=== Loading Documents into Vector Database ===\n")
+    file_to_load = "HealthInsuranceBrochure.md"
+    doc_id = load_document(vector_store, file_to_load)
+    if doc_id:
+        print(f"Document '{file_to_load}' loaded successfully with ID: {doc_id}\n")
+    else:
+        print(f"Failed to load document: {file_to_load}\n")
 
-    print(f"✅ Successfully stored {len(sentences)} sentences\n")
-
-    # Interactive semantic search loop
-    print("=== Semantic Search ===\n")
-    while True:
-        user_query = input("Enter a search query (or 'quit' to exit): ")
-        if user_query.strip().lower() in {"quit", "exit"}:
-            print("\n👋 Goodbye!")
-            break
-        if not user_query.strip():
-            continue
-        search_sentences(vector_store, user_query)
-        print()
+    # Load EmployeeHandbook.md as well
+    file_to_load2 = "EmployeeHandbook.md"
+    doc_id2 = load_document(vector_store, file_to_load2)
+    if doc_id2:
+        print(f"Document '{file_to_load2}' loaded successfully with ID: {doc_id2}\n")
+    else:
+        print(f"Failed to load document: {file_to_load2}\n")
     # ...existing code...
 
 if __name__ == "__main__":
