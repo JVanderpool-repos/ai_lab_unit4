@@ -2,6 +2,8 @@ import os
 import math
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
+from langchain_core.vectorstores import InMemoryVectorStore
+import datetime
 
 # Load environment variables
 load_dotenv()
@@ -47,8 +49,8 @@ def main():
 
     sentences = [
         "The canine barked loudly.",
-        "The dog made a noise.",
-        "The electron spins rapidly."
+"The dog made a noise.",
+"The electron spins rapidly."
     ]
 
     embedding_vectors = []
