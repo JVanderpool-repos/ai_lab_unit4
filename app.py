@@ -242,7 +242,7 @@ def load_with_markdown_structure_chunking(vector_store, file_path):
         
         # Second stage: Apply recursive chunking with overlap to preserve context
         recursive_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=8000,
+            chunk_size=5000,
             chunk_overlap=200,
             separators=["\n\n", "\n", " ", ""]
         )
