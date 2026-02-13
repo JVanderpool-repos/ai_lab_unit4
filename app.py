@@ -235,15 +235,14 @@ def load_with_markdown_structure_chunking(vector_store, file_path):
         # First stage: Split by markdown headers to preserve structure
         headers_to_split_on = [
             ("#", "Header 1"),
-            ("##", "Header 2"),
-            ("###", "Header 3")
+            ("##", "Header 2")
         ]
         markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
         md_chunks = markdown_splitter.split_text(text)
         
         # Second stage: Apply recursive chunking with overlap to preserve context
         recursive_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1500,
+            chunk_size=8000,
             chunk_overlap=200,
             separators=["\n\n", "\n", " ", ""]
         )
